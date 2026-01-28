@@ -1,0 +1,43 @@
+<h1>Carrito</h1>
+<br />
+
+{{#if error}}
+  <div class="error">
+    <p><strong>Error:</strong> {{error}}</p>
+  </div>
+  <p><a href="/carts">Volver a buscar carrito</a></p>
+{{else}}
+  <h2>Carrito ID: {{cart.id}}</h2>
+  <br />
+  
+  {{#if cart.productos.length}}
+    <h3>Productos en el carrito:</h3>
+
+    <ul class="cart-items">
+      {{#each cart.productos}}
+        <li class="cart-item">
+          <br />
+          <strong>{{this.title}}</strong>
+          {{#if this.description}}
+            <p>{{this.description}}</p>
+          {{/if}}
+          <p>Cantidad: {{this.quantity}} x ${{this.price}} = <strong>${{this.subtotal}}</strong></p>
+        </li>
+      {{/each}}
+    </ul>
+    <br />
+
+    <hr />
+    <h3>Total del carrito: ${{cart.total}}</h3>
+    <br />
+
+    <p>
+      <a href="/products">Seguir Comprando</a>
+    </p>
+  {{else}}
+    <p>Tu carrito está vacío.</p>
+    <p><a href="/products">Ver productos</a></p>
+  {{/if}}
+
+  <p><a href="/carts">Buscar otro carrito</a></p>
+{{/if}}

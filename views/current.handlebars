@@ -1,0 +1,21 @@
+<h2>Datos personales</h2>
+<hr />
+<ul>
+  <li>Nombre: {{first_name}}</li>
+  <li>Apellido: {{last_name}}</li>
+  <li>Edad: {{age}}</li>
+  <li>Correo Electrónico: {{email}}</li>
+  {{#if cartId}}
+    <li>Mi Carrito: <a href="/carts/{{cartId}}">Ver mi carrito</a></li>
+  {{/if}}
+</ul>
+
+<div class="actions">
+  <button id="btnLogout">Cerrar Sesión</button>
+</div>
+
+<script>
+  document.getElementById("btnLogout").addEventListener("click", async () => {
+  const response = await fetch("/api/sessions/logout", { method: "POST", }); if
+  (response.ok) { window.location.href = "/login"; } });
+</script>

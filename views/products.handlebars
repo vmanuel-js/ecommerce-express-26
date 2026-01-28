@@ -1,0 +1,30 @@
+<h1>Productos</h1>
+
+{{#if error}}
+  <div class="error">{{error}}</div>
+{{else}}
+  <div class="grid">
+    {{#each products}}
+      <div class="card">
+        <h3>{{this.title}}</h3>
+        <p><strong>Descripción:</strong>{{this.description}}</p>
+        <p><strong>Código:</strong> {{this.code}}</p>
+        <p><strong>Categoría:</strong> {{this.category}}</p>
+        <p><strong>Precio:</strong> ${{this.price}}</p>
+        <p><strong>Stock:</strong> {{this.stock}}</p>
+        <p><strong>Estado:</strong>
+          {{#if this.status}}Disponible{{else}}No disponible{{/if}}</p>
+      </div>
+    {{/each}}
+  </div>
+
+  {{#if hasPrevPage}}
+    <a href="/products?page={{prevPage}}">Anterior</a>
+  {{/if}}
+
+  <span>Página {{page}} de {{totalPages}}</span>
+
+  {{#if hasNextPage}}
+    <a href="/products?page={{nextPage}}">Siguiente</a>
+  {{/if}}
+{{/if}}
