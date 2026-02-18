@@ -3,8 +3,6 @@ import { usuariosModelo } from "../models/usuarios.modelo.js";
 
 export class UsuariosManagerMongo {
   async create(usuario) {
-    const nuevoCarrito = await CartModel.create({ productos: [] });
-    usuario.cart = nuevoCarrito._id;
     let nuevoUsuario = await usuariosModelo.create(usuario);
     return nuevoUsuario;
   }

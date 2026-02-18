@@ -4,6 +4,7 @@ import local from "passport-local";
 import { config } from "./config.js";
 import { createHash, validaPass } from "../utils.js";
 import { UsuariosManagerMongo } from "../managers/UsuariosManager.Mongo.js";
+import CartModel from "../models/cart.model.js";
 
 const buscarToken = (req) => {
   let token = null;
@@ -40,12 +41,15 @@ export const inicializarPassport = () => {
 
           password = createHash(password);
 
+          const nuevoCarrito = await CartModel.create({ productos: [] });
+
           let nuevoUsuario = await userManager.create({
             first_name,
             last_name,
             email: username,
             age,
             password,
+            cart: nuevoCarrito._id,
           });
 
           return done(null, nuevoUsuario);
