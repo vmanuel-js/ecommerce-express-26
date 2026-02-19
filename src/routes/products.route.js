@@ -1,4 +1,6 @@
+import passport from "passport";
 import express from "express";
+import { soloAdmin } from "../middlewares/auth.middleware.js";
 import {
   createProduct,
   deleteProduct,
@@ -10,9 +12,24 @@ import {
 const router = express.Router();
 
 router.get("/", getAllProducts);
-router.post("/", createProduct);
+router.post(
+  "/",
+  passport.authenticate("current", { session: false }),
+  soloAdmin,
+  createProduct,
+);
 router.get("/:pid", getProductById);
-router.put("/:pid", updateProduct);
-router.delete("/:pid", deleteProduct);
+router.put(
+  "/:pid",
+  passport.authenticate("current", { session: false }),
+  soloAdmin,
+  updateProduct,
+);
+router.delete(
+  "/:pid",
+  passport.authenticate("current", { session: false }),
+  soloAdmin,
+  deleteProduct,
+);
 
 export default router;
