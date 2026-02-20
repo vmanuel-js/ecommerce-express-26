@@ -22,9 +22,29 @@ router.post(
   soloUser,
   addProductToCart,
 );
-router.put("/:cid/product/:pid", updateProductQuantity);
-router.delete("/:cid/product/:pid", deleteProductFromCart);
-router.put("/:cid", updateCart);
-router.delete("/:cid", deleteAllProducts);
+router.put(
+  "/:cid/product/:pid",
+  passport.authenticate("current", { session: false }),
+  soloUser,
+  updateProductQuantity,
+);
+router.delete(
+  "/:cid/product/:pid",
+  passport.authenticate("current", { session: false }),
+  soloUser,
+  deleteProductFromCart,
+);
+router.put(
+  "/:cid",
+  passport.authenticate("current", { session: false }),
+  soloUser,
+  updateCart,
+);
+router.delete(
+  "/:cid",
+  passport.authenticate("current", { session: false }),
+  soloUser,
+  deleteAllProducts,
+);
 
 export default router;

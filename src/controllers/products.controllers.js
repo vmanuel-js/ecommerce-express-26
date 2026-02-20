@@ -1,4 +1,4 @@
-import ProductModel from "../models/product.model.js";
+import { productsService } from "../services/products.service.js";
 
 export const getAllProducts = async (req, res) => {
   try {
@@ -21,7 +21,7 @@ export const getAllProducts = async (req, res) => {
     if (sort === "asc") sortConfig.price = 1;
     if (sort === "desc") sortConfig.price = -1;
 
-    const result = await ProductModel.paginate(filter, {
+    const result = await productsService.getProducts(filter, {
       limit,
       page,
       sort: sortConfig,
@@ -57,9 +57,7 @@ export const getAllProducts = async (req, res) => {
 
 export const getProductById = async (req, res) => {
   try {
-    const producto = await ProductModel.findById(req.params.pid);
-    if (!producto)
-      return res.status(404).json({ error: "Producto no encontrado" });
+    const producto = await productsService.getProductById(req.params.pid);
     res.json(producto);
   } catch {
     res.status(404).json({ error: "ID inválido" });
@@ -67,63 +65,50 @@ export const getProductById = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-  const {
-    title,
-    description,
-    code,
-    price,
-    status,
-    stock,
-    category,
-    thumbnails,
-  } = req.body;
-
-  if (
-    !title ||
-    !description ||
-    !code ||
-    price == null ||
-    stock == null ||
-    !category
-  ) {
-    return res.status(400).json({
-      error:
-        "Faltan campos por completar. Debe incluir: title, description, code, price, stock, category",
-    });
-  }
-
   try {
-    const nuevoProducto = await ProductModel.create({
+    const {
       title,
       description,
       code,
       price,
-      status: status ?? true,
+      status,
       stock,
       category,
-      thumbnails: thumbnails || [],
+      thumbnails,
+    } = req.body;
+
+    const nuevoProducto = await productsService.createProduct({
+      title,
+      description,
+      code,
+      price,
+      status,
+      stock,
+      category,
+      thumbnails,
     });
 
     res.status(201).json({
       status: "success",
+      message: "Producto creado exitosamente",
       payload: nuevoProducto,
     });
   } catch {
-    res.status(500).json({ error: "Error al guardar el producto" });
+    res.status(400).json({ error: "Error al guardar el producto" });
   }
 };
 
 export const updateProduct = async (req, res) => {
   try {
-    const resultado = await ProductModel.findByIdAndUpdate(
+    const resultado = await productsService.updateProduct(
       req.params.pid,
       req.body,
-      { new: true },
     );
-    if (!resultado)
-      return res.status(404).json({ error: "Producto no encontrado" });
 
-    res.json(resultado);
+    res.json({
+      message: "Producto actualizado exitosamente",
+      payload: resultado,
+    });
   } catch {
     res.status(404).json({ error: "ID inválido" });
   }
@@ -131,9 +116,7 @@ export const updateProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
-    const eliminado = await ProductModel.findByIdAndDelete(req.params.pid);
-    if (!eliminado)
-      return res.status(404).json({ error: "Producto no encontrado" });
+    await productsService.deleteProduct(req.params.pid);
 
     res.json({ mensaje: "Producto eliminado correctamente" });
   } catch {

@@ -1,11 +1,8 @@
-import CartModel from "../models/cart.model.js";
-import ProductModel from "../models/product.model.js";
+import { cartsService } from "../services/carts.service.js";
 
 export const createCart = async (req, res) => {
   try {
-    const nuevoCarrito = await CartModel.create({
-      productos: [],
-    });
+    const nuevoCarrito = await cartsService.createCart();
 
     res.status(201).json({
       status: "success",
@@ -23,23 +20,14 @@ export const createCart = async (req, res) => {
 
 export const getCartById = async (req, res) => {
   try {
-    const carrito = await CartModel.findById(req.params.cid).populate(
-      "productos.product",
-    );
-
-    if (!carrito) {
-      return res.status(404).json({
-        status: "error",
-        error: "Carrito no encontrado",
-      });
-    }
+    const carrito = await cartsService.getCartById(req.params.cid);
 
     res.json({
       status: "success",
       payload: carrito,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(404).json({
       status: "error",
       error: "Error al obtener el carrito",
       details: error.message,
@@ -50,30 +38,17 @@ export const getCartById = async (req, res) => {
 export const addProductToCart = async (req, res) => {
   try {
     const { cid, pid } = req.params;
+    const { quantity = 1 } = req.body;
 
-    const cart = await CartModel.findById(cid);
-    if (!cart) return res.status(404).json({ error: "Carrito no encontrado" });
+    const cart = await cartsService.addProductToCart(cid, pid, quantity);
 
-    const productExists = await ProductModel.findById(pid);
-    if (!productExists)
-      return res.status(404).json({ error: "Producto no existe" });
-
-    const item = cart.productos.find((p) => p.product.toString() === pid);
-
-    if (item) {
-      item.quantity++;
-    } else {
-      cart.productos.push({ product: pid, quantity: 1 });
-    }
-
-    await cart.save();
     res.json({
       status: "success",
       message: "Producto agregado al carrito",
       payload: cart,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       status: "error",
       error: "Error al agregar producto al carrito",
       details: error.message,
@@ -92,21 +67,7 @@ export const updateProductQuantity = async (req, res) => {
       });
     }
 
-    const cart = await CartModel.findById(cid);
-    if (!cart) return res.status(404).json({ error: "Carrito no encontrado" });
-
-    const productInCart = cart.productos.find(
-      (p) => p.product.toString() === pid,
-    );
-
-    if (!productInCart)
-      return res
-        .status(404)
-        .json({ error: "Producto no existe en el carrito" });
-
-    productInCart.quantity = quantity;
-
-    await cart.save();
+    const cart = await cartsService.updateProductQuantity(cid, pid, quantity);
 
     res.json({
       status: "success",
@@ -114,7 +75,7 @@ export const updateProductQuantity = async (req, res) => {
       payload: cart,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       status: "error",
       error: "Error al actualizar cantidad",
       details: error.message,
@@ -126,29 +87,15 @@ export const deleteProductFromCart = async (req, res) => {
   try {
     const { cid, pid } = req.params;
 
-    const cart = await CartModel.findById(cid);
-    if (!cart) return res.status(404).json({ error: "Carrito no encontrado" });
+    const cart = await cartsService.removeProductFromCart(cid, pid);
 
-    const initialLength = cart.productos.length;
-    cart.productos = cart.productos.filter(
-      (item) => item.product.toString() !== pid,
-    );
-
-    if (cart.productos.length === initialLength) {
-      return res.status(404).json({
-        status: "error",
-        error: "Producto no encontrado en el carrito",
-      });
-    }
-
-    await cart.save();
     res.json({
       status: "success",
       message: "Producto eliminado del carrito",
       payload: cart,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       status: "error",
       error: "Error al eliminar producto",
       details: error.message,
@@ -161,36 +108,7 @@ export const updateCart = async (req, res) => {
     const { cid } = req.params;
     const { productos } = req.body;
 
-    if (!Array.isArray(productos)) {
-      return res.status(400).json({
-        error:
-          "Debes enviar un array en 'productos'. Ejemplo: { productos: [...] }",
-      });
-    }
-
-    const cart = await CartModel.findById(cid);
-    if (!cart) {
-      return res.status(404).json({ error: "Carrito no encontrado" });
-    }
-
-    for (const item of productos) {
-      if (!item.product || !item.quantity) {
-        return res.status(400).json({
-          error:
-            "Formato inválido. Cada elemento debe incluir 'product' y 'quantity'.",
-        });
-      }
-
-      const prod = await ProductModel.findById(item.product);
-      if (!prod) {
-        return res
-          .status(400)
-          .json({ error: `Producto no existe: ${item.product}` });
-      }
-    }
-
-    cart.productos = productos;
-    await cart.save();
+    const cart = await cartsService.updateCart(cid, productos);
 
     res.json({
       status: "success",
@@ -210,11 +128,7 @@ export const deleteAllProducts = async (req, res) => {
   try {
     const { cid } = req.params;
 
-    const cart = await CartModel.findById(cid);
-    if (!cart) return res.status(400).json({ error: "Carrito no encontrado" });
-
-    cart.productos = [];
-    await cart.save();
+    const cart = await cartsService.clearCart(cid);
 
     res.json({
       status: "success",
@@ -222,7 +136,7 @@ export const deleteAllProducts = async (req, res) => {
       payload: cart,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       status: "error",
       error: "Error al vaciar carrito",
       details: error.message,
