@@ -3,8 +3,10 @@ import passportJWT from "passport-jwt";
 import local from "passport-local";
 import { config } from "./config.js";
 import { createHash, validaPass } from "../utils.js";
-import { UsuariosManagerMongo } from "../managers/UsuariosManager.Mongo.js";
-import CartModel from "../models/cart.model.js";
+import { usuariosService } from "../services/usuarios.service.js";
+import { cartsService } from "../services/carts.service.js";
+// import { UsuariosManagerMongo } from "../managers/UsuariosManager.Mongo.js";
+// import CartModel from "../models/cart.model.js";
 
 const buscarToken = (req) => {
   let token = null;
@@ -16,7 +18,7 @@ const buscarToken = (req) => {
   return token;
 };
 
-const userManager = new UsuariosManagerMongo();
+// const userManager = new UsuariosManagerMongo();
 
 export const inicializarPassport = () => {
   passport.use(
@@ -34,16 +36,16 @@ export const inicializarPassport = () => {
         }
 
         try {
-          let existe = await userManager.getBy({ email: username });
+          let existe = await usuariosService.getUserByEmail({ username });
           if (existe) {
             return done(null, false);
           }
 
           password = createHash(password);
 
-          const nuevoCarrito = await CartModel.create({ productos: [] });
+          const nuevoCarrito = await cartsService.createCart({});
 
-          let nuevoUsuario = await userManager.create({
+          let nuevoUsuario = await usuariosService.createUser({
             first_name,
             last_name,
             email: username,
@@ -68,7 +70,7 @@ export const inicializarPassport = () => {
       },
       async (username, password, done) => {
         try {
-          let usuario = await userManager.getBy({ email: username });
+          let usuario = await usuariosService.getUserByEmail({ username });
           if (!usuario) {
             return done(null, false);
           }
