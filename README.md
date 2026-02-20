@@ -1,75 +1,129 @@
-# Ecommerce - Entrega N° 1
+# Ecommerce Backend - Entrega Final
 
-Proyecto de ecommerce con sistema de autenticación JWT, CRUD de usuarios, gestión de productos y carritos de compra desarrollado con Node.js, Express y MongoDB.
+Sistema completo de ecommerce con arquitectura profesional implementando patrones de diseño (DAO, Repository, Service), autenticación JWT, roles de usuario, y sistema de compras con tickets.
 
 ## 📋 Descripción
 
-Sistema completo de ecommerce que implementa:
-- Autenticación y autorización con JWT
-- Gestión de usuarios con roles (user/admin)
-- CRUD completo de productos
-- Sistema de carritos de compra
-- Actualización en tiempo real con WebSockets
+Proyecto backend de ecommerce que implementa:
+
+- **Arquitectura en capas**: DAO → Repository → Service → Controller
+- **Autenticación y autorización** con JWT y roles (user/admin)
+- **Sistema de compras** con validación de stock y generación de tickets
+- **DTOs** para protección de datos sensibles
+- **Middleware de autorización** para control de acceso por roles
+- **CRUD completo** de usuarios, productos y carritos
+- **WebSockets** para actualización en tiempo real
 
 ## ✨ Características Principales
 
-### 🔐 Sistema de Autenticación
-- Registro de usuarios con contraseñas encriptadas (bcrypt)
-- Login con JWT almacenado en cookies HTTP-only
-- Validación de sesión mediante `/api/sessions/current`
-- Sistema de roles (user/admin) para autorización
-- Cada usuario obtiene automáticamente un carrito al registrarse
+### 🏗️ Arquitectura Profesional
 
-### 👥 CRUD de Usuarios
-- **GET** `/api/sessions/` - Listar todos los usuarios (solo admin)
-- **GET** `/api/sessions/:uid` - Obtener usuario por ID
-- **PUT** `/api/sessions/:uid` - Actualizar información de usuario
-- **DELETE** `/api/sessions/:uid` - Eliminar usuario
+Controller → Service → Repository → DAO → MongoDB
+↓ ↓ ↓ ↓
+Req/Res Lógica de Acceso a CRUD
+Negocio Datos Básico
 
-### 🛍️ Gestión de Productos
-- CRUD completo de productos
-- Paginación (8 productos por página por defecto)
-- Filtros por categoría y disponibilidad
-- Ordenamiento por precio (ascendente/descendente)
-- Actualización en tiempo real con Socket.IO
+**Patrones Implementados:**
 
-### 🛒 Sistema de Carritos
-- Creación automática al registrar usuario
-- Agregar/eliminar productos
-- Actualizar cantidades
-- Vaciar carrito completo
-- Relación directa User ↔ Cart
+- **DAO (Data Access Object)**: Capa de persistencia con CRUD básico
+- **Repository**: Abstracción de acceso a datos
+- **Service**: Lógica de negocio y validaciones
+- **DTO (Data Transfer Object)**: Filtrado de información sensible
+
+### 🔐 Sistema de Autenticación y Autorización
+
+#### Autenticación
+
+- Registro con contraseñas encriptadas (bcrypt)
+- Login con JWT en cookies HTTP-only (1 hora de expiración)
+- Estrategia JWT con Passport para validación de tokens
+- Carrito asignado automáticamente al registrarse
+
+#### Autorización por Roles
+
+- **User (role: "user")**:
+  - Ver y gestionar su propio perfil
+  - Agregar productos a su carrito
+  - Realizar compras
+- **Admin (role: "admin")**:
+  - Todas las acciones de User
+  - Crear, actualizar y eliminar productos
+  - Ver todos los usuarios del sistema
+  - Gestionar roles
+
+### 🎫 Sistema de Tickets y Compras
+
+**Proceso de compra:**
+
+1. Usuario agrega productos al carrito
+2. Al finalizar compra, el sistema:
+   - Valida que el carrito pertenezca al usuario
+   - Verifica stock disponible de cada producto
+   - Descuenta stock de productos comprados
+   - Genera ticket con código único (UUID)
+   - Productos sin stock quedan en el carrito
+
+**Modelo de Ticket:**
+
+```javascript
+{
+  code: String (único),
+  purchase_datetime: Date,
+  amount: Number (total),
+  purchaser: String (email),
+  products: [{
+    product: ObjectId,
+    quantity: Number,
+    price: Number
+  }]
+}
+```
+
+### 🛡️ DTOs (Data Transfer Objects)
+
+Protección de información sensible:
+
+**Usuario DTO** (`/api/sessions/current`):
+
+```javascript
+{
+  (_id, first_name, last_name, full_name, email, age, role, cart);
+  // NO incluye: password, __v, timestamps
+}
+```
 
 ## 🚀 Instalación
 
 ### Requisitos Previos
+
 - Node.js (v14 o superior)
 - MongoDB Atlas o MongoDB local
 - npm o yarn
 
 ### Pasos de Instalación
 
-1. **Clonar o descargar el proyecto**
+1. **Clonar el repositorio**
+
 ```bash
+git clone <tu-repositorio>
 cd entrega1-express-coder
 ```
 
 2. **Instalar dependencias**
+
 ```bash
 npm install
 ```
 
 3. **Configurar variables de entorno**
 
-Edita el archivo `config/config.js`:
+Crea un archivo `.env` en la raíz:
 
-```javascript
-export const config = {
-  PORT: 3000,
-  DB_NAME: "ecommerce-entrega-jordan", // Tu nombre de BD
-  SECRET: "ecomCoder26", // Secreto para JWT
-  MONGO_URL: "TU_URL_DE_MONGODB", // URL de conexión
-};
+```env
+PORT=3000
+DB_NAME=ecommerce-entrega
+SECRET=tu_secreto_jwt
+MONGO_URL=mongodb+srv://usuario:password@cluster.mongodb.net/
 ```
 
 4. **Iniciar el servidor**
@@ -83,6 +137,7 @@ npm start
 ```
 
 5. **Acceder a la aplicación**
+
 ```
 http://localhost:3000
 ```
@@ -90,54 +145,68 @@ http://localhost:3000
 ## 📁 Estructura del Proyecto
 
 ```
-entrega1-express-coder/
-├── config/
-│   ├── config.js                 # Configuración general
-│   └── config.passport.js        # Estrategias de Passport (JWT, Local)
-├── controllers/
-│   ├── carts.controllers.js      # Lógica de carritos
-│   ├── products.controllers.js   # Lógica de productos
-│   ├── viewCarts.controllers.js  # Renderizado de vistas de carritos
-│   └── viewProducts.controllers.js # Renderizado de vistas de productos
-├── dao/
-│   ├── models/
-│   │   ├── cart.model.js         # Modelo de Carrito
-│   │   ├── product.model.js      # Modelo de Producto
-│   │   └── usuarios.modelo.js    # Modelo de Usuario
-│   └── UsuariosManager.Mongo.js  # Manager de usuarios
-├── managers/
-│   └── ProductosManager.js       # Manager de productos
-├── public/
-│   ├── css/
-│   │   └── styles.css            # Estilos de la aplicación
-│   └── js/
-│       ├── login.js              # Lógica de login
-│       ├── registro.js           # Lógica de registro
-│       └── realtime.js           # WebSocket para productos
-├── routes/
-│   ├── carts.route.js            # Rutas API de carritos
-│   ├── carts.view.route.js       # Rutas de vistas de carritos
-│   ├── products.route.js         # Rutas API de productos
-│   ├── products.view.route.js    # Rutas de vistas de productos
-│   ├── realtime.route.js         # Ruta de productos en tiempo real
-│   ├── usuarios.router.js        # Rutas de usuarios y sesiones
-│   └── vistas.router.js          # Rutas de vistas principales
-├── views/
+src/
+├── DAO/                          # Capa de persistencia (CRUD básico)
+│   ├── carts.dao.js
+│   ├── products.dao.js
+│   ├── tickets.dao.js
+│   └── usuarios.dao.js
+│
+├── repositories/                 # Capa de acceso a datos
+│   ├── carts.repository.js
+│   ├── products.repository.js
+│   ├── tickets.repository.js
+│   └── usuarios.repository.js
+│
+├── services/                     # Lógica de negocio
+│   ├── carts.service.js
+│   ├── products.service.js
+│   ├── tickets.service.js
+│   └── usuarios.service.js
+│
+├── controllers/                  # Manejo de req/res
+│   ├── carts.controllers.js
+│   ├── products.controllers.js
+│   ├── tickets.controllers.js
+│   ├── viewCarts.controllers.js
+│   └── viewProducts.controllers.js
+│
+├── dto/                          # Data Transfer Objects
+│   └── usuario.dto.js
+│
+├── middlewares/                  # Middleware de autorización
+│   └── auth.middleware.js
+│
+├── models/                       # Esquemas de Mongoose
+│   ├── cart.model.js
+│   ├── product.model.js
+│   ├── ticket.model.js
+│   └── usuarios.modelo.js
+│
+├── routes/                       # Definición de rutas
+│   ├── carts.route.js
+│   ├── products.route.js
+│   ├── tickets.route.js
+│   ├── usuarios.router.js
+│   └── vistas.router.js
+│
+├── config/                       # Configuración
+│   ├── config.js
+│   └── config.passport.js
+│
+├── views/                        # Plantillas Handlebars
 │   ├── layouts/
-│   │   └── main.handlebars       # Layout principal
 │   ├── partials/
-│   │   └── header.handlebars     # Navegación
-│   ├── cart.handlebars           # Vista de carrito
-│   ├── cartsIndex.handlebars     # Búsqueda de carrito
-│   ├── current.handlebars        # Perfil de usuario
-│   ├── home.handlebars           # Página de inicio
-│   ├── login.handlebars          # Formulario de login
-│   ├── products.handlebars       # Lista de productos
-│   ├── realtimeProducts.handlebars # Productos en tiempo real
-│   └── registro.handlebars       # Formulario de registro
-├── index.js                      # Punto de entrada de la aplicación
+│   └── ...
+│
+├── public/                       # Archivos estáticos
+│   ├── css/
+│   └── js/
+│
+├── index.js                      # Punto de entrada
 ├── utils.js                      # Utilidades (bcrypt)
-└── package.json                  # Dependencias del proyecto
+├── .env                          # Variables de entorno
+└── package.json                  # Dependencias
 ```
 
 ## 🔌 API Endpoints
@@ -145,6 +214,7 @@ entrega1-express-coder/
 ### Autenticación y Sesiones
 
 #### Registrar usuario
+
 ```http
 POST /api/sessions/register
 Content-Type: application/json
@@ -158,7 +228,26 @@ Content-Type: application/json
 }
 ```
 
+**Respuesta:**
+
+```json
+{
+  "message": "Registro exitoso",
+  "nuevoUsuario": {
+    "_id": "...",
+    "first_name": "Juan",
+    "last_name": "Pérez",
+    "full_name": "Juan Pérez",
+    "email": "juan@example.com",
+    "age": 25,
+    "role": "user",
+    "cart": "cart_id_123"
+  }
+}
+```
+
 #### Iniciar sesión
+
 ```http
 POST /api/sessions/login
 Content-Type: application/json
@@ -169,70 +258,91 @@ Content-Type: application/json
 }
 ```
 
-#### Obtener usuario actual
+**Respuesta:**
+
+```json
+{
+  "message": "Login exitoso",
+  "usuarioLogueado": { ... },
+  "cartId": "cart_id_123"
+}
+```
+
+_Nota: JWT se almacena en cookie HTTP-only_
+
+#### Obtener usuario actual (DTO)
+
 ```http
 GET /api/sessions/current
 Cookie: cookieToken=JWT_TOKEN
 ```
 
+**Respuesta:**
+
+```json
+{
+  "payload": {
+    "_id": "...",
+    "first_name": "Juan",
+    "last_name": "Pérez",
+    "full_name": "Juan Pérez",
+    "email": "juan@example.com",
+    "age": 25,
+    "role": "user",
+    "cart": "cart_id_123"
+  }
+}
+```
+
 #### Cerrar sesión
+
 ```http
 POST /api/sessions/logout
 ```
 
-### CRUD de Usuarios
-
-#### Listar usuarios (Admin)
-```http
-GET /api/sessions/
-Cookie: cookieToken=JWT_TOKEN
-```
-
-#### Obtener usuario por ID
-```http
-GET /api/sessions/:uid
-Cookie: cookieToken=JWT_TOKEN
-```
-
-#### Actualizar usuario
-```http
-PUT /api/sessions/:uid
-Cookie: cookieToken=JWT_TOKEN
-Content-Type: application/json
-
-{
-  "first_name": "Juan Carlos",
-  "age": 26
-}
-```
-
-#### Eliminar usuario
-```http
-DELETE /api/sessions/:uid
-Cookie: cookieToken=JWT_TOKEN
-```
-
 ### Productos
 
-#### Listar productos (con paginación)
+#### Listar productos (público)
+
 ```http
 GET /api/products?limit=8&page=1&sort=asc&query=Laptops
 ```
 
-Parámetros opcionales:
+**Parámetros opcionales:**
+
 - `limit`: Productos por página (default: 8)
 - `page`: Número de página (default: 1)
 - `sort`: Ordenar por precio (`asc` o `desc`)
-- `query`: Filtrar por categoría o disponibilidad (`available`, `unavailable`)
+- `query`: Filtrar por categoría o disponibilidad
 
-#### Obtener producto por ID
+**Respuesta:**
+
+```json
+{
+  "status": "success",
+  "payload": [
+    /* productos */
+  ],
+  "totalPages": 10,
+  "page": 1,
+  "hasPrevPage": false,
+  "hasNextPage": true,
+  "prevLink": null,
+  "nextLink": "http://localhost:3000/api/products?page=2&limit=8"
+}
+```
+
+#### Obtener producto por ID (público)
+
 ```http
 GET /api/products/:pid
 ```
 
-#### Crear producto
+#### Crear producto (solo admin)
+
 ```http
 POST /api/products
+Cookie: cookieToken=JWT_TOKEN_ADMIN
 Content-Type: application/json
 
 {
@@ -245,9 +355,11 @@ Content-Type: application/json
 }
 ```
 
-#### Actualizar producto
+#### Actualizar producto (solo admin)
+
 ```http
 PUT /api/products/:pid
+Cookie: cookieToken=JWT_TOKEN_ADMIN
 Content-Type: application/json
 
 {
@@ -256,79 +368,160 @@ Content-Type: application/json
 }
 ```
 
-#### Eliminar producto
+#### Eliminar producto (solo admin)
+
 ```http
 DELETE /api/products/:pid
+Cookie: cookieToken=JWT_TOKEN_ADMIN
 ```
 
 ### Carritos
 
-#### Crear carrito
+#### Crear carrito (público)
+
 ```http
 POST /api/carts
 ```
 
-#### Obtener carrito por ID
+#### Obtener carrito por ID (público)
+
 ```http
 GET /api/carts/:cid
 ```
 
-#### Agregar producto al carrito
-```http
-POST /api/carts/:cid/product/:pid
-```
+**Respuesta:**
 
-#### Actualizar cantidad de producto
-```http
-PUT /api/carts/:cid/product/:pid
-Content-Type: application/json
-
+```json
 {
-  "quantity": 3
+  "status": "success",
+  "payload": {
+    "_id": "cart_id",
+    "productos": [
+      {
+        "product": {
+          "_id": "prod_id",
+          "title": "Laptop HP",
+          "price": 1000,
+          "stock": 5
+        },
+        "quantity": 2
+      }
+    ]
+  }
 }
 ```
 
-#### Eliminar producto del carrito
-```http
-DELETE /api/carts/:cid/product/:pid
-```
+#### Agregar producto al carrito (solo user)
 
-#### Actualizar todo el carrito
 ```http
-PUT /api/carts/:cid
+POST /api/carts/:cid/product/:pid
+Cookie: cookieToken=JWT_TOKEN_USER
 Content-Type: application/json
 
 {
-  "productos": [
+  "quantity": 2
+}
+```
+
+#### Actualizar cantidad de producto (solo user)
+
+```http
+PUT /api/carts/:cid/product/:pid
+Cookie: cookieToken=JWT_TOKEN_USER
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+```
+
+#### Eliminar producto del carrito (solo user)
+
+```http
+DELETE /api/carts/:cid/product/:pid
+Cookie: cookieToken=JWT_TOKEN_USER
+```
+
+#### Vaciar carrito (solo user)
+
+```http
+DELETE /api/carts/:cid
+Cookie: cookieToken=JWT_TOKEN_USER
+```
+
+### Compras y Tickets
+
+#### Finalizar compra (solo user)
+
+```http
+POST /api/carts/:cid/purchase
+Cookie: cookieToken=JWT_TOKEN_USER
+```
+
+**Respuesta exitosa:**
+
+```json
+{
+  "status": "success",
+  "message": "Compra realizada exitosamente",
+  "ticket": {
+    "_id": "...",
+    "code": "abc-123-def-456",
+    "purchase_datetime": "2024-02-19T10:30:00Z",
+    "amount": 2150,
+    "purchaser": "juan@example.com",
+    "products": [
+      {
+        "product": "prod_id_1",
+        "quantity": 2,
+        "price": 1000
+      },
+      {
+        "product": "prod_id_2",
+        "quantity": 1,
+        "price": 150
+      }
+    ]
+  }
+}
+```
+
+**Respuesta con productos sin stock:**
+
+```json
+{
+  "status": "success",
+  "message": "Compra realizada parcialmente. Algunos productos no tenían stock suficiente",
+  "ticket": {
+    /* ticket con productos comprados */
+  },
+  "productosSinStock": [
     {
-      "product": "PRODUCT_ID",
-      "quantity": 2
+      "product": "prod_id_3",
+      "quantity": 5
     }
   ]
 }
 ```
 
-#### Vaciar carrito
+#### Ver todos los tickets (solo admin)
+
 ```http
-DELETE /api/carts/:cid
+GET /api/tickets
+Cookie: cookieToken=JWT_TOKEN_ADMIN
 ```
 
-## 🌐 Rutas de Vistas
+#### Ver ticket por ID
 
-| Ruta | Descripción |
-|------|-------------|
-| `/` | Página de inicio |
-| `/register` | Formulario de registro |
-| `/login` | Formulario de login |
-| `/current` | Perfil de usuario (requiere autenticación) |
-| `/products` | Lista de productos con paginación |
-| `/carts` | Búsqueda de carrito |
-| `/carts/:cid` | Vista detallada del carrito |
-| `/realtimeproducts` | Productos en tiempo real (WebSocket) |
+```http
+GET /api/tickets/:tid
+Cookie: cookieToken=JWT_TOKEN
+```
 
 ## 📊 Modelos de Datos
 
 ### Usuario (User)
+
 ```javascript
 {
   first_name: String,
@@ -336,19 +529,20 @@ DELETE /api/carts/:cid
   email: String (unique, required),
   age: Number,
   password: String (hashed, required),
-  cart: ObjectId (ref: Cart),
-  role: String (default: "user")
+  cart: ObjectId (ref: "Cart"),
+  role: String (default: "user", values: ["user", "admin"])
 }
 ```
 
 ### Producto (Product)
+
 ```javascript
 {
   title: String (required),
   description: String (required),
-  code: String (required),
+  code: String (required, unique),
   price: Number (required),
-  status: Boolean (required),
+  status: Boolean (required, default: true),
   stock: Number (required),
   category: String (required),
   thumbnails: [String]
@@ -356,165 +550,487 @@ DELETE /api/carts/:cid
 ```
 
 ### Carrito (Cart)
+
 ```javascript
 {
   productos: [
     {
-      product: ObjectId (ref: Product),
+      product: ObjectId (ref: "Product"),
       quantity: Number (default: 1)
     }
   ]
 }
 ```
 
-## 🔒 Sistema de Autorización
+### Ticket
 
-### Roles
+```javascript
+{
+  code: String (unique, required),
+  purchase_datetime: Date (required, default: Date.now),
+  amount: Number (required),
+  purchaser: String (required, email del comprador),
+  products: [
+    {
+      product: ObjectId (ref: "Product"),
+      quantity: Number (required),
+      price: Number (required)
+    }
+  ]
+}
+```
+
+## 🌐 Rutas de Vistas (Handlebars)
+
+| Ruta                | Descripción                          | Auth |
+| ------------------- | ------------------------------------ | ---- |
+| `/`                 | Página de inicio                     | No   |
+| `/register`         | Formulario de registro               | No   |
+| `/login`            | Formulario de login                  | No   |
+| `/current`          | Perfil de usuario                    | Sí   |
+| `/products`         | Lista de productos con paginación    | No   |
+| `/carts`            | Búsqueda de carrito                  | No   |
+| `/carts/:cid`       | Vista detallada del carrito          | No   |
+| `/realtimeproducts` | Productos en tiempo real (WebSocket) | No   |
+
+## 🔒 Sistema de Autorización por Roles
+
+### Permisos por Rol
 
 #### Usuario Normal (`role: "user"`)
-- Ver su propia información
-- Actualizar su perfil
-- Eliminar su cuenta
-- Acceder a su carrito
+
+✅ **Puede:**
+
+- Registrarse y hacer login
+- Ver su perfil (`/api/sessions/current`)
+- Ver productos (`GET /api/products`)
+- Agregar productos a su carrito
+- Actualizar su carrito
+- Realizar compras
+- Ver sus propios tickets
+
+❌ **No puede:**
+
+- Crear, actualizar o eliminar productos
+- Ver información de otros usuarios
+- Acceder a carritos de otros usuarios
 
 #### Administrador (`role: "admin"`)
-- Ver todos los usuarios
-- Actualizar cualquier usuario
-- Eliminar cualquier usuario
+
+✅ **Puede:**
+
+- Todo lo que puede hacer un User
+- Crear productos (`POST /api/products`)
+- Actualizar productos (`PUT /api/products/:pid`)
+- Eliminar productos (`DELETE /api/products/:pid`)
+- Ver todos los usuarios (`GET /api/sessions`)
+- Ver todos los tickets (`GET /api/tickets`)
 - Cambiar roles de usuarios
 
 ### Crear un Administrador
 
-Para convertir un usuario en administrador:
+**Opción 1: Manualmente en MongoDB**
 
 1. Registra un usuario normalmente
-2. Accede a MongoDB Atlas o Compass
-3. Busca el usuario por email en la colección `users`
-4. Cambia el campo `role` de `"user"` a `"admin"`
+2. Accede a MongoDB Compass o Atlas
+3. Busca el usuario en la colección `users`
+4. Cambia `role: "user"` a `role: "admin"`
 
-O usando MongoDB Shell:
+**Opción 2: MongoDB Shell**
+
 ```javascript
-db.users.updateOne(
-  { email: "admin@example.com" },
-  { $set: { role: "admin" } }
-)
+db.users.updateOne({ email: "admin@example.com" }, { $set: { role: "admin" } });
+```
+
+**Opción 3: Crear endpoint temporal** (eliminar después)
+
+```javascript
+// En usuarios.router.js - SOLO PARA DESARROLLO
+router.post("/create-admin", async (req, res) => {
+  const { first_name, last_name, email, age, password } = req.body;
+  // ... crear usuario con role: "admin"
+});
 ```
 
 ## 🛠️ Tecnologías Utilizadas
 
-| Tecnología | Versión | Uso |
-|------------|---------|-----|
-| Node.js | v14+ | Runtime de JavaScript |
-| Express | ^5.1.0 | Framework web |
-| MongoDB | - | Base de datos NoSQL |
-| Mongoose | ^9.0.0 | ODM para MongoDB |
-| Passport | ^0.7.0 | Autenticación |
-| Passport-JWT | ^4.0.1 | Estrategia JWT |
-| Passport-Local | ^1.0.0 | Estrategia Local |
-| bcrypt | ^5.1.1 | Hash de contraseñas |
-| jsonwebtoken | ^9.0.2 | Generación de JWT |
-| Socket.IO | ^4.8.1 | WebSockets |
-| Express-Handlebars | ^8.0.3 | Motor de plantillas |
-| mongoose-paginate-v2 | ^1.9.1 | Paginación |
-| cookie-parser | ^1.4.6 | Manejo de cookies |
+| Tecnología           | Versión   | Uso                              |
+| -------------------- | --------- | -------------------------------- |
+| **Backend**          |
+| Node.js              | v14+      | Runtime de JavaScript            |
+| Express              | ^5.1.0    | Framework web                    |
+| **Base de Datos**    |
+| MongoDB              | -         | Base de datos NoSQL              |
+| Mongoose             | ^9.0.0    | ODM para MongoDB                 |
+| mongoose-paginate-v2 | ^1.9.1    | Paginación de resultados         |
+| **Autenticación**    |
+| Passport             | ^0.7.0    | Middleware de autenticación      |
+| Passport-JWT         | ^4.0.1    | Estrategia JWT                   |
+| Passport-Local       | ^1.0.0    | Estrategia Local                 |
+| bcrypt               | ^6.0.0    | Hash de contraseñas              |
+| jsonwebtoken         | ^9.0.3    | Generación y verificación de JWT |
+| cookie-parser        | ^1.4.7    | Manejo de cookies                |
+| **Tiempo Real**      |
+| Socket.IO            | ^4.8.1    | WebSockets bidireccionales       |
+| **Plantillas**       |
+| Express-Handlebars   | ^8.0.3    | Motor de plantillas              |
+| **Utilidades**       |
+| uuid                 | ^13.0.0   | Generación de IDs únicos         |
+| dotenv               | ^17.2.3   | Variables de entorno             |
+| validator            | ^13.15.23 | Validación de datos              |
+| **Desarrollo**       |
+| nodemon              | ^3.1.11   | Reinicio automático del servidor |
 
-## 🎯 Funcionalidades Destacadas
+## 🛠️ Tecnologías Utilizadas
 
-### ✅ Registro Automático de Carrito
-Al registrarse, cada usuario obtiene automáticamente un carrito vacío asociado.
+| Tecnología           | Versión | Uso                   |
+| -------------------- | ------- | --------------------- |
+| Node.js              | v14+    | Runtime de JavaScript |
+| Express              | ^5.1.0  | Framework web         |
+| MongoDB              | -       | Base de datos NoSQL   |
+| Mongoose             | ^9.0.0  | ODM para MongoDB      |
+| Passport             | ^0.7.0  | Autenticación         |
+| Passport-JWT         | ^4.0.1  | Estrategia JWT        |
+| Passport-Local       | ^1.0.0  | Estrategia Local      |
+| bcrypt               | ^5.1.1  | Hash de contraseñas   |
+| jsonwebtoken         | ^9.0.2  | Generación de JWT     |
+| Socket.IO            | ^4.8.1  | WebSockets            |
+| Express-Handlebars   | ^8.0.3  | Motor de plantillas   |
+| mongoose-paginate-v2 | ^1.9.1  | Paginación            |
+| cookie-parser        | ^1.4.6  | Manejo de cookies     |
+
+## 🎯 Flujo Completo de Uso
+
+### 1️⃣ Registro y Login
+
+```bash
+# 1. Registrar usuario
+POST /api/sessions/register
+Body: { first_name, last_name, email, age, password }
+
+# 2. Login (recibe JWT + cartId)
+POST /api/sessions/login
+Body: { email, password }
+
+# 3. Verificar sesión
+GET /api/sessions/current
+```
+
+### 2️⃣ Como Usuario (role: "user")
+
+```bash
+# 1. Ver productos disponibles
+GET /api/products?limit=10
+
+# 2. Agregar productos al carrito
+POST /api/carts/:cartId/product/:productId
+Body: { quantity: 2 }
+
+# 3. Ver mi carrito
+GET /api/carts/:cartId
+
+# 4. Finalizar compra
+POST /api/carts/:cartId/purchase
+# → Genera ticket, descuenta stock
+```
+
+### 3️⃣ Como Administrador (role: "admin")
+
+```bash
+# 1. Crear usuario admin (modificar role en BD)
+
+# 2. Login como admin
+POST /api/sessions/login
+Body: { email: "admin@test.com", password: "..." }
+
+# 3. Crear productos
+POST /api/products
+Body: { title, description, code, price, stock, category }
+
+# 4. Ver todos los tickets
+GET /api/tickets
+```
+
+### 📊 Ejemplo Completo
+
+```javascript
+// 1. REGISTRO
+POST /api/sessions/register
+{
+  "first_name": "Juan",
+  "last_name": "Pérez",
+  "email": "juan@test.com",
+  "age": 25,
+  "password": "123456"
+}
+// → Respuesta: usuario creado + cart asignado
+
+// 2. LOGIN
+POST /api/sessions/login
+{
+  "email": "juan@test.com",
+  "password": "123456"
+}
+// → Respuesta: JWT en cookie + cartId: "abc123"
+
+// 3. VER PRODUCTOS
+GET /api/products
+// → Lista de productos con stock
+
+// 4. AGREGAR AL CARRITO
+POST /api/carts/abc123/product/prod_001
+{
+  "quantity": 2
+}
+// → Producto agregado
+
+// 5. COMPRAR
+POST /api/carts/abc123/purchase
+// → Ticket generado, stock actualizado
+```
+
+## 💡 Funcionalidades Destacadas
+
+### ✅ Arquitectura en Capas
+
+- **Separación clara de responsabilidades**
+- **DAO**: Solo interacción con MongoDB
+- **Repository**: Abstracción de acceso a datos
+- **Service**: Validaciones y lógica de negocio
+- **Controller**: Manejo de HTTP
 
 ### ✅ Seguridad
+
 - Contraseñas hasheadas con bcrypt (10 rounds)
 - JWT almacenado en cookies HTTP-only
-- Tokens con expiración de 1 hora
-- Validación de permisos por rol
+- Tokens con expiración automática (1 hora)
+- DTOs para ocultar información sensible
+- Middleware de autorización por roles
+
+### ✅ Sistema de Compras Robusto
+
+- Validación de stock en tiempo real
+- Descuento automático de stock
+- Compras parciales (productos sin stock quedan en carrito)
+- Generación de tickets con UUID
+- Registro completo de transacciones
 
 ### ✅ Paginación Inteligente
-Sistema de paginación con:
-- Límite configurable de productos por página
-- Navegación entre páginas
-- Enlaces previos/siguientes
-- Información de página actual y total
 
-### ✅ Tiempo Real
-Actualización instantánea de productos usando WebSocket:
-- Los cambios se reflejan en todos los clientes conectados
-- Sin necesidad de recargar la página
+- Límite configurable por página
+- Navegación prev/next
+- URLs para cada página
+- Información de totalPages y página actual
 
-## 📝 Ejemplos de Uso
+### ✅ Tiempo Real con WebSockets
 
-### Flujo Completo de Usuario
+- Actualización instantánea de productos
+- Sincronización entre clientes
+- Sin necesidad de recargar página
 
-1. **Registro**
-   - Usuario completa formulario en `/register`
-   - Sistema crea usuario + carrito automático
-   - Redirección a `/login`
+### ✅ Manejo de Errores
 
-2. **Login**
-   - Usuario ingresa credenciales en `/login`
-   - Sistema genera JWT y lo almacena en cookie
-   - Redirección a `/current` (perfil)
-
-3. **Ver Productos**
-   - Usuario navega a `/products`
-   - Ve catálogo con paginación
-   - Puede filtrar por categoría o precio
-
-4. **Gestionar Carrito**
-   - Desde `/current`, accede a su carrito
-   - Agrega productos (via API)
-   - Actualiza cantidades
-   - Finaliza compra
-
-### Ejemplo de Filtrado de Productos
-
-```
-# Ver solo laptops
-GET /products?query=Laptops
-
-# Ver productos disponibles
-GET /products?query=available
-
-# Ordenar por precio ascendente
-GET /products?sort=asc
-
-# Combinar filtros
-GET /products?query=Accesorios&sort=desc&limit=5
-```
+- Try-catch en todas las capas
+- Mensajes de error descriptivos
+- Códigos HTTP apropiados
+- Validaciones en Services
 
 ## 🐛 Solución de Problemas
 
 ### Error de conexión a MongoDB
+
 **Síntoma**: `Error al conectarse con el servidor de BD`
 
 **Solución**:
-- Verifica tu URL de MongoDB en `config/config.js`
-- Asegúrate de tener conexión a internet
-- Revisa que tu IP esté en la whitelist de MongoDB Atlas
+
+```bash
+# 1. Verifica tu .env
+MONGO_URL=mongodb+srv://usuario:password@cluster...
+
+# 2. Verifica tu conexión a internet
+ping google.com
+
+# 3. Verifica IP whitelist en MongoDB Atlas
+# - Ve a Network Access
+# - Agrega tu IP actual o 0.0.0.0/0 (desarrollo)
+```
 
 ### Error "Usuario no autorizado"
-**Síntoma**: `401 Unauthorized` al acceder a rutas protegidas
+
+**Síntoma**: `401 Unauthorized` o `403 Forbidden`
 
 **Solución**:
-- Verifica que hayas hecho login
-- Revisa que la cookie `cookieToken` esté presente
-- El token expira en 1 hora, vuelve a hacer login
+
+```bash
+# 1. Verifica que hiciste login
+POST /api/sessions/login
+
+# 2. Verifica que la cookie existe
+# En Postman: Cookies → cookieToken debe existir
+
+# 3. Si expiró (1 hora), vuelve a hacer login
+
+# 4. Verifica tu rol
+GET /api/sessions/current
+# → role debe ser "admin" para rutas de admin
+```
+
+### Error "Carrito no pertenece al usuario"
+
+**Síntoma**: Al intentar comprar
+
+**Solución**:
+
+```bash
+# 1. Verifica que el cartId sea el correcto
+GET /api/sessions/current
+# → Usa el cart._id de la respuesta
+
+# 2. Asegúrate de estar logueado
+# El JWT debe contener el mismo cartId
+```
 
 ### Productos no aparecen
-**Síntoma**: Lista de productos vacía
+
+**Síntoma**: Lista vacía en GET /api/products
 
 **Solución**:
-- Crea productos desde `/realtimeproducts`
-- O usa Postman para crear productos via API
-- Verifica la conexión a MongoDB
 
-### Socket.IO no funciona
-**Síntoma**: `io is not defined` en consola
+```bash
+# 1. Crea productos como admin
+POST /api/sessions/login (admin)
+POST /api/products
+
+# 2. Verifica en MongoDB
+# Colección: products debe tener documentos
+
+# 3. Revisa logs del servidor
+# Puede haber errores de conexión
+```
+
+### Stock no se descuenta al comprar
+
+**Síntoma**: Después de comprar, el stock sigue igual
 
 **Solución**:
-- Verifica que `/socket.io/socket.io.js` se cargue antes de `realtime.js`
-- Reinicia el servidor
-- Limpia caché del navegador (Ctrl+Shift+R)
+
+```bash
+# 1. Verifica que el ticket se creó
+GET /api/tickets
+
+# 2. Revisa logs del servidor
+# Puede haber errores en ticketsService
+
+# 3. Verifica que products tenga stock > 0
+GET /api/products/:pid
+```
+
+### JWT no se guarda en cookie
+
+**Síntoma**: Siempre pide login
+
+**Solución**:
+
+```bash
+# En Postman:
+# 1. Ve a Settings → General
+# 2. Activa "Automatically follow redirects"
+# 3. Activa "Send cookies with requests"
+
+# En navegador:
+# 1. Abre DevTools → Application → Cookies
+# 2. Verifica que "cookieToken" existe
+# 3. Si no, limpia cookies y vuelve a hacer login
+```
+
+## 🧪 Testing con Postman
+
+### Colección de Pruebas
+
+#### 1. Autenticación
+
+```javascript
+// Registrar User
+POST http://localhost:3000/api/sessions/register
+{
+  "first_name": "Test",
+  "last_name": "User",
+  "email": "test@example.com",
+  "age": 25,
+  "password": "123456"
+}
+
+// Login User
+POST http://localhost:3000/api/sessions/login
+{
+  "email": "test@example.com",
+  "password": "123456"
+}
+// → Guardar cartId de la respuesta
+
+// Ver perfil (DTO)
+GET http://localhost:3000/api/sessions/current
+// → Verifica que NO tenga password
+```
+
+#### 2. Productos (como Admin)
+
+```javascript
+// Login Admin (primero cambiar role en BD)
+POST http://localhost:3000/api/sessions/login
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+
+// Crear Producto
+POST http://localhost:3000/api/products
+{
+  "title": "Laptop Test",
+  "description": "Laptop de prueba",
+  "code": "TEST001",
+  "price": 1000,
+  "stock": 10,
+  "category": "Electronics"
+}
+// → Guardar productId
+
+// Listar Productos
+GET http://localhost:3000/api/products
+```
+
+#### 3. Carrito y Compra (como User)
+
+```javascript
+// Login User
+POST http://localhost:3000/api/sessions/login
+{ "email": "test@example.com", "password": "123456" }
+
+// Agregar producto al carrito
+POST http://localhost:3000/api/carts/{cartId}/product/{productId}
+{ "quantity": 2 }
+
+// Ver carrito
+GET http://localhost:3000/api/carts/{cartId}
+
+// Comprar
+POST http://localhost:3000/api/carts/{cartId}/purchase
+// → Verifica que se generó el ticket
+// → Verifica que el stock se descontó
+```
+
+### Variables de Entorno en Postman
+
+```javascript
+// Crear estas variables:
+{
+  "baseUrl": "http://localhost:3000",
+  "userToken": "", // Se guarda automáticamente al login
+  "adminToken": "",
+  "cartId": "",
+  "productId": ""
+}
+```
 
 ## 👨‍💻 Autor
 
