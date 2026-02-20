@@ -20,6 +20,7 @@ import { router as VistasRouter } from "./routes/vistas.router.js";
 import { router as UsuariosRouter } from "./routes/usuarios.router.js";
 import productsRouter from "./routes/products.route.js";
 import cartsRouter from "./routes/carts.route.js";
+import ticketsRouter from "./routes/tickets.route.js";
 import productsViewRouter from "./routes/products.view.route.js";
 import cartsViewRouter from "./routes/carts.view.route.js";
 import realtimeRouter from "./routes/realtime.route.js";
@@ -84,6 +85,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/sessions", UsuariosRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/carts", cartsRouter);
+app.use("/api/tickets", ticketsRouter);
 
 // Rutas Vistas
 app.use("/", VistasRouter);
