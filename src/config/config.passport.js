@@ -5,8 +5,6 @@ import { config } from "./config.js";
 import { createHash, validaPass } from "../utils.js";
 import { usuariosService } from "../services/usuarios.service.js";
 import { cartsService } from "../services/carts.service.js";
-// import { UsuariosManagerMongo } from "../managers/UsuariosManager.Mongo.js";
-// import CartModel from "../models/cart.model.js";
 
 const buscarToken = (req) => {
   let token = null;
@@ -17,8 +15,6 @@ const buscarToken = (req) => {
 
   return token;
 };
-
-// const userManager = new UsuariosManagerMongo();
 
 export const inicializarPassport = () => {
   passport.use(
@@ -36,19 +32,24 @@ export const inicializarPassport = () => {
         }
 
         try {
-          let existe = await usuariosService.getUserByEmail({ username });
+          const email =
+            typeof username === "string"
+              ? username
+              : username.username || req.body.email;
+
+          let existe = await usuariosService.getUserByEmail(email);
           if (existe) {
             return done(null, false);
           }
 
           password = createHash(password);
 
-          const nuevoCarrito = await cartsService.createCart({});
+          const nuevoCarrito = await cartsService.createCart();
 
           let nuevoUsuario = await usuariosService.createUser({
             first_name,
             last_name,
-            email: username,
+            email: email,
             age,
             password,
             cart: nuevoCarrito._id,
@@ -70,7 +71,11 @@ export const inicializarPassport = () => {
       },
       async (username, password, done) => {
         try {
-          let usuario = await usuariosService.getUserByEmail({ username });
+          const email =
+            typeof username === "string"
+              ? username
+              : username.username || req.body.email;
+          let usuario = await usuariosService.getUserByEmail(email);
           if (!usuario) {
             return done(null, false);
           }

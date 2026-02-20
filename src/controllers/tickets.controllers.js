@@ -37,7 +37,16 @@ export const purchaseCart = async (req, res) => {
     const { cid } = req.params;
     const userEmail = req.user.email;
 
-    if (req.user.cart.toString() !== cid) {
+    let userCartId = req.user.cart;
+
+    if (typeof userCartId === "object" && userCartId !== null) {
+      userCartId = userCartId._id || userCartId.toString();
+    }
+
+    userCartId = String(userCartId).trim();
+    const requestedCartId = String(cid).trim();
+
+    if (userCartId !== requestedCartId) {
       return res.status(403).json({
         status: "error",
         error: "Este carrito no pertenece al usuario logueado",
